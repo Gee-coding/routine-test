@@ -1,36 +1,49 @@
 package main
 
 import (
-	"fmt"
-	"time"
+	"routine-test/controllers"
+
+	_ "github.com/joho/godotenv"
+	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 )
 
-func worker(done chan bool) {
-	fmt.Println("กำลังทำงาน...")
-	time.Sleep(2 * time.Second) // จำลองการทำงาน 2 วินาที
-	fmt.Println("เสร็จสิ้น!")
-	done <- true // ส่งค่าบอกว่าเสร็จแล้ว
-}
 func main() {
 
-	// Connect to MySQL Database
-	// dsn := "user:password@tcp(localhost:3306)/hospital_db?charset=utf8mb4&parseTime=True&loc=Local"
-	// db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
-	// if err != nil {
-	// 	log.Fatal("Failed to connect to database:", err)
+	// API_KEY := os.Getenv("API_KEY")
+	// if API_KEY == "" {
+	// 	log.Fatal("API_KEY is not set")
 	// }
 
-	// fmt.Println("Database connected successfully!")
+	// Create a new instance of Echo
+	e := echo.New()
 
-	// // Auto Migrate Tables
-	// db.AutoMigrate(&models.User{}, &models.Employee{}, &models.Admin{}, &models.Patient{}, &models.Company{}, &models.Room{}, &models.Ward{})
+	e.Use(middleware.CORS())
+	// ✅ เพิ่ม Global Middleware
+	e.Use(middleware.Logger())
+	e.Use(middleware.Recover())
 
-	// fmt.Println("Database Migrated Successfully!")
+	// // สร้างกลุ่ม public API
+	// _publicAPI := e.Group("/api/v1")
 
-	done := make(chan bool) // สร้างช่องทางสื่อสาร
-	go worker(done) // เรียกใช้ Goroutine
-	time.Sleep(1 * time.Second) 
-	fmt.Println("routine 2")
+	// // สร้างกลุ่ม private API
+	// config := middleware.JWTConfig{
+	// 	Claims:     &models.JwtCustomClaims{},
+	// 	SigningKey: []byte(API_KEY),
+	// }
+	// _privateAPI := e.Group("/api/v1")
+	// _privateAPI.Use(middleware.JWTWithConfig(config))
 
-	<-done // รอรับค่าจาก Channel ก่อนจะจบโปรแกรม
+	// ✅ เส้นทางสำหรับ Login
+	e.GET("/auth/login", controllers.HandleGoogleLogin)
+	e.GET("/auth/callback", controllers.HandleGoogleCallback)
+
+	// ✅ เส้นทางที่ต้องการ Authentication
+	private := e.Group("/profile")
+	private.Use(controllers.AuthMiddleware) // ใช้ Middleware ตรวจสอบ Token
+	private.GET("", controllers.HandleProfile)
+
+	// Start Server
+	e.Logger.Fatal(e.Start(":8080"))
+
 }
