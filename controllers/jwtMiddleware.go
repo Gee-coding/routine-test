@@ -1,24 +1,12 @@
 package controllers
 
 import (
-	"log"
 	"net/http"
-	"os"
 
 	"github.com/golang-jwt/jwt/v4"
+	_ "github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
-	_"github.com/joho/godotenv"
 )
-
-// ตั้งค่า Secret Key
-var API_KEY string
-
-func init() {
-	API_KEY = os.Getenv("API_KEY")
-	if API_KEY == "" {
-		log.Fatal("API_KEY is not set")
-	}
-}
 
 // Custom Middleware JWT
 func JWTMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
@@ -55,7 +43,6 @@ func JWTMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 		return next(c)
 	}
 }
-
 
 // ✅ ฟังก์ชันสร้าง JWT Token (สำหรับทดสอบ)
 func GenerateJWT() string {
